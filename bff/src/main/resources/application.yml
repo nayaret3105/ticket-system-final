@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff
+
+jwt:
+  secret: ${JWT_SECRET:clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad}
+
+services:
+  ms-auth:
+    url: ${MS_AUTH_URL:http://localhost:8081}
+  ms-event:
+    url: ${MS_EVENT_URL:http://localhost:8082}
+  ms-ticket-sales:
+    url: ${MS_TICKET_SALES_URL:http://localhost:8083}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+logging:
+  level:
+    com.tickets.bff: DEBUG

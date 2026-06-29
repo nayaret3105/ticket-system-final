@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ms-auth:
+    build: ./ms-auth
+    container_name: ms-auth
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  ms-event:
+    build: ./ms-event
+    container_name: ms-event
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/event_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  ms-ticket-sales:
+    build: ./ms-ticket-sales
+    container_name: ms-ticket-sales
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sales_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
+      MS_EVENT_URL: http://ms-event:8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ms-event:
+        condition: service_started
+    networks:
+      - microservices-net
+
+  bff:
+    build: ./bff
+    container_name: bff
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
+      MS_AUTH_URL: http://ms-auth:8081
+      MS_EVENT_URL: http://ms-event:8082
+      MS_TICKET_SALES_URL: http://ms-ticket-sales:8083
+    depends_on:
+      - ms-auth
+      - ms-event
+      - ms-ticket-sales
+    networks:
+      - microservices-net
+
+volumes:
+  postgres_data:
+
+networks:
+  microservices-net:
+    driver: bridge
