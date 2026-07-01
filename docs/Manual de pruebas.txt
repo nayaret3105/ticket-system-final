@@ -1,0 +1,180 @@
+-----Manual de Pruebas------
+
+Comandos Docker
+1.-Borra la base de datos y deja todo en cero:
+docker compose down -v
+
+2.-Levanta el sistema:
+docker compose up --build
+
+3.-Verifica que estén arriba los servicios:
+docker compose ps
+
+4.-Detiene el Sistema:
+docker compose down
+
+Pruebas funcionales mediante Swagger (BFF)
+http://localhost:8080/swagger-ui.html
+
+1. Registrar usuario (POST /api/auth/register) 
+{
+  "username": "naya",
+  "email": "naya@test.com",
+  "password": "123456"
+}
+
+2. Probar sin token (GET /api/events) Resultado 401
+Bearer token_falso
+
+3. Login (POST /api/auth/login)
+{
+  "username": "naya",
+  "password": "123456"
+}
+Copiar el ID del evento generado para utilizarlo en las siguientes pruebas.
+
+4. Listar eventos con token (GET /api/events) 
+Bearer <TOKEN_JWT>
+
+5. Crear evento (POST /api/events)
+- Bearer <TOKEN_JWT>
+- {
+  "name": "Concierto de Rock",
+  "description": "Evento creado desde Swagger",
+  "eventDate": "2026-07-20 20:00",
+  "location": "Movistar Arena",
+  "capacity": 300,
+  "ticketPrice": 18000
+}
+- Copiar el ID del evento generado para utilizarlo en las siguientes pruebas.
+
+6. Buscar evento por ID (GET /api/events/{id})
+-PONER EL ID CREADO
+-Bearer <TOKEN_JWT>
+
+7. Actualizar evento (PUT /api/events/{id})
+- PONER ID CREADO
+- Bearer <TOKEN_JWT>
+- {
+  "name": "Concierto Actualizado",
+  "description": "Evento actualizado desde Swagger",
+  "eventDate": "2026-07-25 21:00",
+  "location": "Estadio Nacional",
+  "capacity": 500,
+  "ticketPrice": 25000
+}
+
+8. Listar eventos nuevamente (GET /api/events)
+Bearer <TOKEN_JWT>
+
+9. Crear venta (POST /api/sales)
+- Bearer <TOKEN_JWT>
+
+{
+  "eventId": "<ID_DEL_EVENTO>",
+  "buyer": "Nayarett Rodríguez",
+  "ticketCount": 2
+}
+
+- Copiar el id de la venta
+
+10. Buscar venta por ID (GET /api/sales/{id})
+- poner el <ID_DE_LA_VENTA>
+- Bearer <TOKEN_JWT>
+
+11. Eliminar venta (DELETE /api/sales/{id})
+
+- poner el <ID_DE_LA_VENTA>
+- Bearer <TOKEN_JWT>
+
+12. Verificar ventas vacías (GET /api/sales)
+- Bearer <TOKEN_JWT>
+- RESULTADO []
+
+13. Eliminar evento (DELETE /api/events/{id})
+- Poner el <ID_DEL_EVENTO>
+- Bearer <TOKEN_JWT>
+
+
+----------Pruebas funcionales mediante Postman--------------
+
+1.- REGISTER (POST)
+http://localhost:8080/api/auth/register
+
+{
+  "username": "naya",
+  "email": "naya@test.com",
+  "password": "123456"
+}
+
+2.-LOGIN (POST)
+http://localhost:8080/api/auth/login
+
+{
+  "username": "naya",
+  "password": "123456"
+}
+Copiar el token JWT para utilizarlo en las siguientes peticiones
+
+3.-PROBAR SEGURIDAD (GET)
+http://localhost:8080/api/events
+
+-Bearer token_falso
+
+4.-Crear evento (POST)
+http://localhost:8080/api/events
+-Autorización : Bearer {{token}}
+-{
+  "name": "Concierto de Rock",
+  "description": "Evento creado desde Swagger",
+  "eventDate": "2026-07-20 20:00",
+  "location": "Movistar Arena",
+  "capacity": 300,
+  "ticketPrice": 18000
+}
+-Copiar el id del evento y guardarlo en {{eventId}}
+
+5.- Buscar evento (GET)
+http://localhost:8080/api/events/{{eventId}}
+
+6.-Listar eventos (GET)
+http://localhost:8080/api/events
+
+7. Actualizar evento (PUT)
+http://localhost:8080/api/events/{{eventId}}
+-{
+  "name": "Concierto Actualizado",
+  "description": "Evento actualizado desde Swagger",
+  "eventDate": "2026-07-25 21:00",
+  "location": "Estadio Nacional",
+  "capacity": 500,
+  "ticketPrice": 25000
+}
+
+8.-Crear venta (POST)
+http://localhost:8080/api/sales
+-{
+  "eventId": "{{eventId}}",
+  "buyer": "Nayarett Rodríguez",
+  "ticketCount": 2
+}
+Copiar el id de la venta y guardarlo en {{saleId}}
+
+9.-Buscar venta (GET)
+http://localhost:8080/api/sales/{{saleId}}
+
+10.-Listar Ventas  (GET)
+http://localhost:8080/api/sales
+
+11.-Eliminar venta (DELETE)
+http://localhost:8080/api/sales/{{saleId}}
+
+12. Eliminar evento (DELETE)
+http://localhost:8080/api/events/{{eventId}}
+
+Observaciones
+
+• Todos los endpoints fueron probados correctamente mediante Swagger y Postman.
+• Se verificó la autenticación mediante JWT.
+• Se comprobó el funcionamiento de los CRUD de Eventos y Ventas.
+• Se validó el acceso no autorizado obteniendo respuesta HTTP 401.
