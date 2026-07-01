@@ -9,17 +9,17 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     @Bean
-    public RestClient authRestClient(@Value("${services.ms-auth.url}") String url) {
+    public RestClient authRestClient(@Value("${auth.service.url}") String url) {
         return RestClient.builder().baseUrl(url).build();
     }
 
     @Bean
-    public RestClient eventRestClient(@Value("${services.ms-event.url}") String url) {
+    public RestClient eventRestClient(@Value("${event.service.url}") String url) {
         return RestClient.builder().baseUrl(url).build();
     }
 
     @Bean
-    public RestClient ticketSalesRestClient(@Value("${services.ms-ticket-sales.url}") String url) {
+    public RestClient ticketSalesRestClient(@Value("${ticket.sales.service.url}") String url) {
         return RestClient.builder().baseUrl(url).build();
     }
 }

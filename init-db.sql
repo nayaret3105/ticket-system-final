@@ -1,3 +1,0 @@
-CREATE DATABASE auth_db;
-CREATE DATABASE event_db;
-CREATE DATABASE sales_db;

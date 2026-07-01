@@ -1,11 +1,7 @@
-FROM gradle:8-jdk21-alpine AS builder
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY build.gradle settings.gradle ./
-COPY src ./src
-RUN gradle bootJar --no-daemon -x test
-
-FROM eclipse-temurin:21-jre-alpine
-WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+COPY . .
+RUN chmod +x gradlew
+RUN ./gradlew build -x test
 EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "build/libs/ms-auth-0.0.1-SNAPSHOT.jar"]

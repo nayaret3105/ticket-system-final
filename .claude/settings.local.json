@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\mjose\\\\Documents\" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"ferret|hardware|store|tienda\" } | Select-Object FullName)"
+      "Bash(xargs -I{} sh -c 'echo \"--{}--\"; cat {}')",
+      "Bash(./gradlew.bat clean *)",
+      "Bash(gradle -v)",
+      "Bash(docker --version)",
+      "Bash(grep -rn \"gradlew\\\\|rootProject\\\\|ticket-system\" docker-compose.yml .github)",
+      "Bash(ls gradle/wrapper)",
+      "Bash(cat gradle/wrapper/gradle-wrapper.properties)",
+      "Bash(xargs -I{} sh -c 'grep -A 30 \"FlywaySqlScriptException\\\\|JdbcSQLSyntaxError\" {} | sed \"s/<[^>]*>//g\" | head -60')",
+      "Bash(./gradlew.bat test *)",
+      "Bash(./gradlew.bat compileJava --no-daemon)"
     ]
   }
 }

@@ -1,12 +1,11 @@
 package com.tickets.mssales.service;
 
 import com.tickets.mssales.client.EventClient;
-import com.tickets.mssales.dto.request.TicketSaleRequestDto;
-import com.tickets.mssales.dto.response.TicketSaleResponseDto;
-import com.tickets.mssales.entity.TicketSale;
+import com.tickets.mssales.dto.TicketSaleRequestDto;
+import com.tickets.mssales.dto.TicketSaleResponseDto;
 import com.tickets.mssales.exception.SaleNotFoundException;
+import com.tickets.mssales.model.TicketSale;
 import com.tickets.mssales.repository.TicketSaleRepository;
-import com.tickets.mssales.service.impl.TicketSaleServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -56,14 +55,14 @@ class TicketSaleServiceImplTest {
     }
 
     @Test
-    void createSale_whenEventPriceIsRetrieved_shouldCalculateTotalAndPersist() {
+    void registrar_whenEventPriceIsRetrieved_shouldCalculateTotalAndPersist() {
         UUID eventId = UUID.randomUUID();
         UUID saleId = UUID.randomUUID();
 
         when(eventClient.getEventPrice(eventId, AUTH_HEADER)).thenReturn(new BigDecimal("25000"));
         when(ticketSaleRepository.save(any(TicketSale.class))).thenReturn(buildSale(saleId, eventId));
 
-        TicketSaleResponseDto response = ticketSaleService.createSale(buildRequest(eventId), AUTH_HEADER);
+        TicketSaleResponseDto response = ticketSaleService.registrar(buildRequest(eventId), AUTH_HEADER);
 
         assertThat(response.id()).isEqualTo(saleId);
         assertThat(response.buyer()).isEqualTo("Juan Perez");
@@ -72,25 +71,25 @@ class TicketSaleServiceImplTest {
     }
 
     @Test
-    void createSale_shouldPassAuthHeaderToEventClient() {
+    void registrar_shouldPassAuthHeaderToEventClient() {
         UUID eventId = UUID.randomUUID();
 
         when(eventClient.getEventPrice(eventId, AUTH_HEADER)).thenReturn(new BigDecimal("25000"));
         when(ticketSaleRepository.save(any(TicketSale.class))).thenReturn(buildSale(UUID.randomUUID(), eventId));
 
-        ticketSaleService.createSale(buildRequest(eventId), AUTH_HEADER);
+        ticketSaleService.registrar(buildRequest(eventId), AUTH_HEADER);
 
         verify(eventClient).getEventPrice(eventId, AUTH_HEADER);
     }
 
     @Test
-    void getSaleById_whenSaleExists_shouldReturnTicketSaleResponseDto() {
+    void buscarPorId_whenSaleExists_shouldReturnTicketSaleResponseDto() {
         UUID saleId = UUID.randomUUID();
         UUID eventId = UUID.randomUUID();
 
         when(ticketSaleRepository.findById(saleId)).thenReturn(Optional.of(buildSale(saleId, eventId)));
 
-        TicketSaleResponseDto response = ticketSaleService.getSaleById(saleId);
+        TicketSaleResponseDto response = ticketSaleService.buscarPorId(saleId);
 
         assertThat(response.id()).isEqualTo(saleId);
         assertThat(response.eventId()).isEqualTo(eventId);
@@ -98,18 +97,18 @@ class TicketSaleServiceImplTest {
     }
 
     @Test
-    void getSaleById_whenSaleDoesNotExist_shouldThrowSaleNotFoundException() {
+    void buscarPorId_whenSaleDoesNotExist_shouldThrowSaleNotFoundException() {
         UUID saleId = UUID.randomUUID();
 
         when(ticketSaleRepository.findById(saleId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ticketSaleService.getSaleById(saleId))
+        assertThatThrownBy(() -> ticketSaleService.buscarPorId(saleId))
                 .isInstanceOf(SaleNotFoundException.class)
                 .hasMessageContaining(saleId.toString());
     }
 
     @Test
-    void getAllSales_shouldReturnMappedListOfResponseDtos() {
+    void listarTodas_shouldReturnMappedListOfResponseDtos() {
         UUID eventId = UUID.randomUUID();
         List<TicketSale> sales = List.of(
                 buildSale(UUID.randomUUID(), eventId),
@@ -119,38 +118,38 @@ class TicketSaleServiceImplTest {
 
         when(ticketSaleRepository.findAll()).thenReturn(sales);
 
-        List<TicketSaleResponseDto> result = ticketSaleService.getAllSales();
+        List<TicketSaleResponseDto> result = ticketSaleService.listarTodas();
 
         assertThat(result).hasSize(3);
         assertThat(result).allMatch(dto -> dto.buyer().equals("Juan Perez"));
     }
 
     @Test
-    void getAllSales_whenNoSalesExist_shouldReturnEmptyList() {
+    void listarTodas_whenNoSalesExist_shouldReturnEmptyList() {
         when(ticketSaleRepository.findAll()).thenReturn(List.of());
 
-        assertThat(ticketSaleService.getAllSales()).isEmpty();
+        assertThat(ticketSaleService.listarTodas()).isEmpty();
     }
 
     @Test
-    void deleteSale_whenSaleExists_shouldCallDeleteById() {
+    void eliminar_whenSaleExists_shouldCallDeleteById() {
         UUID saleId = UUID.randomUUID();
         UUID eventId = UUID.randomUUID();
 
         when(ticketSaleRepository.findById(saleId)).thenReturn(Optional.of(buildSale(saleId, eventId)));
 
-        ticketSaleService.deleteSale(saleId);
+        ticketSaleService.eliminar(saleId);
 
         verify(ticketSaleRepository).deleteById(saleId);
     }
 
     @Test
-    void deleteSale_whenSaleDoesNotExist_shouldThrowSaleNotFoundExceptionWithoutDeleting() {
+    void eliminar_whenSaleDoesNotExist_shouldThrowSaleNotFoundExceptionWithoutDeleting() {
         UUID saleId = UUID.randomUUID();
 
         when(ticketSaleRepository.findById(saleId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ticketSaleService.deleteSale(saleId))
+        assertThatThrownBy(() -> ticketSaleService.eliminar(saleId))
                 .isInstanceOf(SaleNotFoundException.class);
 
         verify(ticketSaleRepository, never()).deleteById(any());

@@ -1,12 +1,11 @@
 package com.tickets.msevent.service;
 
-import com.tickets.msevent.dto.request.EventRequestDto;
-import com.tickets.msevent.dto.response.EventResponseDto;
-import com.tickets.msevent.entity.Event;
+import com.tickets.msevent.dto.EventRequestDto;
+import com.tickets.msevent.dto.EventResponseDto;
 import com.tickets.msevent.exception.EventAlreadyExistsException;
 import com.tickets.msevent.exception.EventNotFoundException;
+import com.tickets.msevent.model.Event;
 import com.tickets.msevent.repository.EventRepository;
-import com.tickets.msevent.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,19 +57,18 @@ class EventServiceImplTest {
                 .capacity(500)
                 .ticketPrice(new BigDecimal("25000"))
                 .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
     @Test
-    void createEvent_whenEventDoesNotExist_shouldPersistAndReturnDto() {
+    void crear_whenEventDoesNotExist_shouldPersistAndReturnDto() {
         UUID id = UUID.randomUUID();
         Event saved = buildEvent(id);
 
         when(eventRepository.existsByNameAndEventDate("Rock Concert", EVENT_DATE)).thenReturn(false);
         when(eventRepository.save(any(Event.class))).thenReturn(saved);
 
-        EventResponseDto response = eventService.createEvent(buildRequest());
+        EventResponseDto response = eventService.crear(buildRequest());
 
         assertThat(response.id()).isEqualTo(id);
         assertThat(response.name()).isEqualTo("Rock Concert");
@@ -79,10 +77,10 @@ class EventServiceImplTest {
     }
 
     @Test
-    void createEvent_whenEventWithSameNameAndDateExists_shouldThrowEventAlreadyExistsException() {
+    void crear_whenEventWithSameNameAndDateExists_shouldThrowEventAlreadyExistsException() {
         when(eventRepository.existsByNameAndEventDate("Rock Concert", EVENT_DATE)).thenReturn(true);
 
-        assertThatThrownBy(() -> eventService.createEvent(buildRequest()))
+        assertThatThrownBy(() -> eventService.crear(buildRequest()))
                 .isInstanceOf(EventAlreadyExistsException.class)
                 .hasMessageContaining("Rock Concert");
 
@@ -90,12 +88,12 @@ class EventServiceImplTest {
     }
 
     @Test
-    void getEventById_whenEventExists_shouldReturnEventResponseDto() {
+    void buscarPorId_whenEventExists_shouldReturnEventResponseDto() {
         UUID id = UUID.randomUUID();
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(buildEvent(id)));
 
-        EventResponseDto response = eventService.getEventById(id);
+        EventResponseDto response = eventService.buscarPorId(id);
 
         assertThat(response.id()).isEqualTo(id);
         assertThat(response.location()).isEqualTo("Municipal Theatre");
@@ -103,34 +101,34 @@ class EventServiceImplTest {
     }
 
     @Test
-    void getEventById_whenEventDoesNotExist_shouldThrowEventNotFoundException() {
+    void buscarPorId_whenEventDoesNotExist_shouldThrowEventNotFoundException() {
         UUID id = UUID.randomUUID();
 
         when(eventRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> eventService.getEventById(id))
+        assertThatThrownBy(() -> eventService.buscarPorId(id))
                 .isInstanceOf(EventNotFoundException.class)
                 .hasMessageContaining(id.toString());
     }
 
     @Test
-    void getAllEvents_shouldReturnListOrderedByDate() {
+    void listarTodos_shouldReturnListOrderedByDate() {
         List<Event> events = List.of(buildEvent(UUID.randomUUID()), buildEvent(UUID.randomUUID()));
 
         when(eventRepository.findAllByOrderByEventDateAsc()).thenReturn(events);
 
-        assertThat(eventService.getAllEvents()).hasSize(2);
+        assertThat(eventService.listarTodos()).hasSize(2);
     }
 
     @Test
-    void getAllEvents_whenNoEventsExist_shouldReturnEmptyList() {
+    void listarTodos_whenNoEventsExist_shouldReturnEmptyList() {
         when(eventRepository.findAllByOrderByEventDateAsc()).thenReturn(List.of());
 
-        assertThat(eventService.getAllEvents()).isEmpty();
+        assertThat(eventService.listarTodos()).isEmpty();
     }
 
     @Test
-    void updateEvent_whenEventExists_shouldUpdateFieldsAndReturnDto() {
+    void actualizar_whenEventExists_shouldUpdateFieldsAndReturnDto() {
         UUID id = UUID.randomUUID();
         Event existing = buildEvent(id);
         EventRequestDto request = new EventRequestDto(
@@ -139,42 +137,42 @@ class EventServiceImplTest {
         when(eventRepository.findById(id)).thenReturn(Optional.of(existing));
         when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        EventResponseDto response = eventService.updateEvent(id, request);
+        EventResponseDto response = eventService.actualizar(id, request);
 
         assertThat(response.name()).isEqualTo("Jazz Concert");
         assertThat(response.capacity()).isEqualTo(200);
     }
 
     @Test
-    void updateEvent_whenEventDoesNotExist_shouldThrowEventNotFoundException() {
+    void actualizar_whenEventDoesNotExist_shouldThrowEventNotFoundException() {
         UUID id = UUID.randomUUID();
 
         when(eventRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> eventService.updateEvent(id, buildRequest()))
+        assertThatThrownBy(() -> eventService.actualizar(id, buildRequest()))
                 .isInstanceOf(EventNotFoundException.class);
 
         verify(eventRepository, never()).save(any());
     }
 
     @Test
-    void deleteEvent_whenEventExists_shouldCallDeleteById() {
+    void eliminar_whenEventExists_shouldCallDeleteById() {
         UUID id = UUID.randomUUID();
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(buildEvent(id)));
 
-        eventService.deleteEvent(id);
+        eventService.eliminar(id);
 
         verify(eventRepository).deleteById(id);
     }
 
     @Test
-    void deleteEvent_whenEventDoesNotExist_shouldThrowEventNotFoundExceptionWithoutDeleting() {
+    void eliminar_whenEventDoesNotExist_shouldThrowEventNotFoundExceptionWithoutDeleting() {
         UUID id = UUID.randomUUID();
 
         when(eventRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> eventService.deleteEvent(id))
+        assertThatThrownBy(() -> eventService.eliminar(id))
                 .isInstanceOf(EventNotFoundException.class);
 
         verify(eventRepository, never()).deleteById(any());

@@ -1,29 +1,21 @@
 package com.tickets.msauth.config;
 
-import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@OpenAPIDefinition
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("ms-auth - Servicio de Autenticacion")
-                        .description("Microservicio de registro, login y validacion de tokens JWT")
-                        .version("1.0.0"))
-                .addSecurityItem(new SecurityRequirement().addList("Bearer"))
-                .components(new Components()
-                        .addSecuritySchemes("Bearer", new SecurityScheme()
-                                .name("Bearer")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
+                        .title("MS-Auth API")
+                        .version("1.0")
+                        .description("Authentication and authorization service for the ticket system"));
     }
 }

@@ -1,98 +1,140 @@
-version: '3.8'
+# =============================================================
+# docker-compose.yml — Ticket System Microservicios
+# =============================================================
+#
+# ARQUITECTURA:
+#
+#   [Frontend / Postman]
+#          ↓ Puerto 8080
+#     bff-service          ← único punto de entrada público
+#      ↓        ↓        ↓
+#   ms-auth  ms-event  ms-ticket-sales
+#      ↓        ↓           ↓
+#               PostgreSQL (5432)
+#
+# PUERTOS:
+#   8080 → bff-service      (público)
+#   8081 → ms-auth          (interno)
+#   8082 → ms-event         (interno)
+#   8083 → ms-ticket-sales  (interno)
+#   5432 → PostgreSQL       (desarrollo)
+#
+# =============================================================
 
 services:
 
+  # -----------------------------------------------------------
+  # POSTGRESQL
+  # -----------------------------------------------------------
   postgres:
     image: postgres:16
-    container_name: postgres-db
+    container_name: postgres-tickets
+    restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres1234
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    networks:
-      - microservices-net
+      - ./postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
+  # -----------------------------------------------------------
+  # MS-AUTH — Autenticación y JWT (Puerto 8081)
+  # -----------------------------------------------------------
   ms-auth:
     build: ./ms-auth
     container_name: ms-auth
-    ports:
-      - "8081:8081"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
-      JWT_EXPIRATION: 86400000
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - microservices-net
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: auth_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres1234
+      JWT_SECRET: "ticket-system-secret-key-super-segura-2024-minimo-32-chars"
+      JWT_EXPIRATION: 86400000
+    ports:
+      - "8081:8081"
 
+  # -----------------------------------------------------------
+  # MS-EVENT — Gestión de Eventos (Puerto 8082)
+  # -----------------------------------------------------------
   ms-event:
     build: ./ms-event
     container_name: ms-event
-    ports:
-      - "8082:8082"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/event_db
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - microservices-net
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: event_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres1234
+      JWT_SECRET: "ticket-system-secret-key-super-segura-2024-minimo-32-chars"
+    ports:
+      - "8082:8082"
 
+  # -----------------------------------------------------------
+  # MS-TICKET-SALES — Venta de Entradas (Puerto 8083)
+  # -----------------------------------------------------------
+  # Al registrar una venta:
+  #   1. Consulta el precio del evento en ms-event
+  #   2. Calcula el total automáticamente
+  # -----------------------------------------------------------
   ms-ticket-sales:
     build: ./ms-ticket-sales
     container_name: ms-ticket-sales
-    ports:
-      - "8083:8083"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sales_db
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
-      MS_EVENT_URL: http://ms-event:8082
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
       ms-event:
         condition: service_started
-    networks:
-      - microservices-net
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sales_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres1234
+      JWT_SECRET: "ticket-system-secret-key-super-segura-2024-minimo-32-chars"
+      EVENT_SERVICE_URL: http://ms-event:8082
+    ports:
+      - "8083:8083"
 
-  bff:
+  # -----------------------------------------------------------
+  # BFF-SERVICE — Backend For Frontend (Puerto 8080)
+  # -----------------------------------------------------------
+  # Único servicio público. Coordina todos los microservicios.
+  # Valida JWT localmente antes de reenviar requests.
+  # -----------------------------------------------------------
+  bff-service:
     build: ./bff
     container_name: bff
-    ports:
-      - "8080:8080"
-    environment:
-      JWT_SECRET: clave-super-secreta-para-jwt-512bits-minimo-requerido-por-seguridad
-      MS_AUTH_URL: http://ms-auth:8081
-      MS_EVENT_URL: http://ms-event:8082
-      MS_TICKET_SALES_URL: http://ms-ticket-sales:8083
+    restart: always
     depends_on:
       - ms-auth
       - ms-event
       - ms-ticket-sales
-    networks:
-      - microservices-net
+    environment:
+      AUTH_SERVICE_URL: http://ms-auth:8081
+      EVENT_SERVICE_URL: http://ms-event:8082
+      TICKET_SALES_SERVICE_URL: http://ms-ticket-sales:8083
+      JWT_SECRET: "ticket-system-secret-key-super-segura-2024-minimo-32-chars"
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:
-
-networks:
-  microservices-net:
-    driver: bridge

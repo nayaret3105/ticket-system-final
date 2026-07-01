@@ -1,29 +1,27 @@
 package com.tickets.msevent.config;
 
-import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@OpenAPIDefinition(security = {
+        @SecurityRequirement(name = "bearerAuth")
+})
+@SecurityScheme(name = "bearerAuth", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("ms-event - Servicio de Gestion de Eventos")
-                        .description("Microservicio CRUD para la administracion de eventos")
-                        .version("1.0.0"))
-                .addSecurityItem(new SecurityRequirement().addList("Bearer"))
-                .components(new Components()
-                        .addSecuritySchemes("Bearer", new SecurityScheme()
-                                .name("Bearer")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
+                        .title("MS-Event API")
+                        .version("1.0")
+                        .description("Event management service for the ticket system"));
     }
 }

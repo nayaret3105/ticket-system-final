@@ -1,29 +1,27 @@
 package com.tickets.mssales.config;
 
-import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@OpenAPIDefinition(security = {
+        @SecurityRequirement(name = "bearerAuth")
+})
+@SecurityScheme(name = "bearerAuth", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("ms-ticket-sales - Servicio de Venta de Entradas")
-                        .description("Microservicio para el registro y gestion de ventas de entradas a eventos")
-                        .version("1.0.0"))
-                .addSecurityItem(new SecurityRequirement().addList("Bearer"))
-                .components(new Components()
-                        .addSecuritySchemes("Bearer", new SecurityScheme()
-                                .name("Bearer")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
+                        .title("MS-Ticket-Sales API")
+                        .version("1.0")
+                        .description("Ticket sales service for the event management system"));
     }
 }

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS ticket_sales (
-    id           UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    id           UUID          DEFAULT gen_random_uuid() PRIMARY KEY,
     event_id     UUID          NOT NULL,
     buyer        VARCHAR(150)  NOT NULL,
     ticket_count INTEGER       NOT NULL,

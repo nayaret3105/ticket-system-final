@@ -4,21 +4,14 @@ import com.tickets.bff.dto.TicketSaleRequestDto;
 import com.tickets.bff.dto.TicketSaleResponseDto;
 import com.tickets.bff.service.TicketSalesBffService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,59 +19,67 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/sales")
 @RequiredArgsConstructor
-@Tag(name = "Ventas BFF", description = "Proxy de venta de entradas hacia ms-ticket-sales")
-@SecurityRequirement(name = "Bearer")
+@Tag(name = "Ticket Sales", description = "Proxy for ticket sales management towards ms-ticket-sales")
 public class TicketSalesBffController {
 
     private final TicketSalesBffService ticketSalesBffService;
 
-    @GetMapping
-    @Operation(summary = "Listar todas las ventas", description = "Retorna el historial completo de ventas de entradas")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista de ventas obtenida exitosamente"),
-        @ApiResponse(responseCode = "401", description = "Token JWT invalido o ausente"),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    @Operation(summary = "List all sales", description = "Returns the complete history of ticket sales.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sales retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or missing JWT token"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<TicketSaleResponseDto>> getAll(@RequestHeader("Authorization") String authHeader) {
+    @GetMapping
+    public ResponseEntity<List<TicketSaleResponseDto>> listar(@RequestHeader("Authorization") String authHeader) {
         return ticketSalesBffService.getAllSales(authHeader);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Obtener venta por ID", description = "Retorna los datos de una venta especifica")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Venta encontrada"),
-        @ApiResponse(responseCode = "401", description = "Token JWT invalido o ausente"),
-        @ApiResponse(responseCode = "404", description = "Venta no encontrada"),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    @Operation(summary = "Find sale by ID", description = "Returns data of a specific ticket sale.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sale found"),
+            @ApiResponse(responseCode = "401", description = "Invalid or missing JWT token"),
+            @ApiResponse(responseCode = "404", description = "Sale not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<TicketSaleResponseDto> getById(@PathVariable UUID id,
-                                                         @RequestHeader("Authorization") String authHeader) {
+    @GetMapping("/{id}")
+    public ResponseEntity<TicketSaleResponseDto> buscarPorId(
+            @Parameter(description = "Sale unique identifier", required = true) @PathVariable UUID id,
+            @RequestHeader("Authorization") String authHeader) {
         return ticketSalesBffService.getSaleById(id, authHeader);
     }
 
-    @PostMapping
-    @Operation(summary = "Registrar venta de entradas", description = "Registra la compra de entradas para un evento. El total se calcula automaticamente.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Venta registrada exitosamente"),
-        @ApiResponse(responseCode = "400", description = "Datos invalidos o el evento no existe"),
-        @ApiResponse(responseCode = "401", description = "Token JWT invalido o ausente"),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    @Operation(
+            summary = "Register ticket sale",
+            description = "Registers the purchase of tickets for an event.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Ticket sale data", required = true
+            )
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Sale registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid data or event does not exist"),
+            @ApiResponse(responseCode = "401", description = "Invalid or missing JWT token"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<TicketSaleResponseDto> create(@Valid @RequestBody TicketSaleRequestDto request,
-                                                        @RequestHeader("Authorization") String authHeader) {
-        return ticketSalesBffService.createSale(request, authHeader);
+    @PostMapping
+    public ResponseEntity<TicketSaleResponseDto> registrar(
+            @Valid @RequestBody TicketSaleRequestDto dto,
+            @RequestHeader("Authorization") String authHeader) {
+        return ticketSalesBffService.createSale(dto, authHeader);
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar venta", description = "Elimina un registro de venta del sistema")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Venta eliminada exitosamente"),
-        @ApiResponse(responseCode = "401", description = "Token JWT invalido o ausente"),
-        @ApiResponse(responseCode = "404", description = "Venta no encontrada"),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    @Operation(summary = "Delete sale", description = "Permanently removes a ticket sale record.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sale deleted successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or missing JWT token"),
+            @ApiResponse(responseCode = "404", description = "Sale not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Void> delete(@PathVariable UUID id,
-                                       @RequestHeader("Authorization") String authHeader) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(
+            @Parameter(description = "Sale unique identifier", required = true) @PathVariable UUID id,
+            @RequestHeader("Authorization") String authHeader) {
         return ticketSalesBffService.deleteSale(id, authHeader);
     }
 }
